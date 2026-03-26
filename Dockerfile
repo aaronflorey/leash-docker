@@ -17,7 +17,10 @@ RUN set -eux; \
     chmod -R 0777 /opt/leash; \
     curl https://mise.run | sh; \
     ln -sf /root/.local/bin/mise /usr/local/bin/mise; \
-    mise --version
+    mise --version; \
+    curl -fsSL https://raw.githubusercontent.com/aaronflorey/bin/master/install.sh | sh; \
+    /usr/local/bin/bin install --force github.com/cli/cli /usr/local/bin/gh; \
+    gh --version
 
 COPY entrypoint.sh /etc/profile.d/leash-mise.sh
 

@@ -122,6 +122,7 @@ ENV_VALUES=(
 )
 VOLUME_VALUES=(
   '$HOME/.cache/leash/mise/data:/opt/leash/mise/data'
+  '$HOME/.config/gh:/root/.config/gh:ro'
 )
 
 if [ "$MODE" = "full" ]; then
