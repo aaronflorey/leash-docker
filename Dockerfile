@@ -11,6 +11,7 @@ RUN set -eux; \
     apt-get install -y --no-install-recommends \
         bash \
         git \
+        bubblewrap \
         xz-utils; \
     rm -rf /var/lib/apt/lists/*; \
     mkdir -p /opt/leash/mise/data /opt/leash/mise/config /opt/leash/mise/cache; \
