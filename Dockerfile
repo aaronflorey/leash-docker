@@ -23,5 +23,6 @@ RUN set -eux; \
     gh --version
 
 COPY entrypoint.sh /etc/profile.d/leash-mise.sh
+COPY iterm-title.sh /etc/profile.d/leash-iterm-title.sh
 
-RUN chmod 0644 /etc/profile.d/leash-mise.sh
+RUN chmod 0644 /etc/profile.d/leash-mise.sh /etc/profile.d/leash-iterm-title.sh

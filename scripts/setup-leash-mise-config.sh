@@ -136,6 +136,29 @@ if [ "$MODE" = "full" ]; then
   )
 fi
 
+if [ -f "$HOME/.gitignore" ]; then
+  VOLUME_VALUES+=(
+    '$HOME/.gitignore:/root/.gitignore:ro'
+  )
+fi
+
+GIT_AUTHOR_NAME_VALUE="$(git config user.name 2>/dev/null || true)"
+GIT_AUTHOR_EMAIL_VALUE="$(git config user.email 2>/dev/null || true)"
+
+if [ -n "$GIT_AUTHOR_NAME_VALUE" ]; then
+  ENV_VALUES+=(
+    "GIT_AUTHOR_NAME=${GIT_AUTHOR_NAME_VALUE}"
+    "GIT_COMMITTER_NAME=${GIT_AUTHOR_NAME_VALUE}"
+  )
+fi
+
+if [ -n "$GIT_AUTHOR_EMAIL_VALUE" ]; then
+  ENV_VALUES+=(
+    "GIT_AUTHOR_EMAIL=${GIT_AUTHOR_EMAIL_VALUE}"
+    "GIT_COMMITTER_EMAIL=${GIT_AUTHOR_EMAIL_VALUE}"
+  )
+fi
+
 set_value 'leash.target_image' 'ghcr.io/aaronflorey/leash-docker:latest'
 
 for value in "${ENV_VALUES[@]}"; do
