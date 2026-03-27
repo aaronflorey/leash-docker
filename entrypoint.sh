@@ -44,7 +44,7 @@ _leash_mise_resolve_repo_dir() {
 
 _leash_mise_scan_repo_files() {
   _REPO_FILES="$(find "$_LEASH_REPO_DIR" \
-    \( -path '*/.git' -o -path '*/node_modules' -o -path '*/vendor' -o -path '*/target' -o -path '*/dist' -o -path '*/build' \) -prune \
+    \( -path '*/.*' -o -path '*/node_modules' -o -path '*/vendor' -o -path '*/target' -o -path '*/dist' -o -path '*/build' \) -prune \
     -o -type f -print 2>/dev/null | sed 's|.*/||' | sort -u)"
 }
 
@@ -179,7 +179,7 @@ _leash_mise_install() {
     _leash_mise_ensure_tool "python@${python_version}" || true
   fi
 
-  if _leash_mise_repo_has build.zig build.zig.zon .zig-version; then
+  if _leash_mise_repo_has build.zig build.zig.zon || [ -f "$_LEASH_REPO_DIR/.zig-version" ]; then
     zig_version="$(_leash_mise_trim "$(_leash_mise_read_root_file "$_LEASH_REPO_DIR/.zig-version")")"
     if [ -z "$zig_version" ]; then
       zig_version="latest"
