@@ -6,8 +6,8 @@ usage() {
 Usage: ./scripts/setup-leash-mise-config.sh [--minimal|--full] [config-path]
 
 Options:
-  --minimal   Add only MISE_DATA_DIR and its volume mount.
-  --full      Add MISE_DATA_DIR, MISE_CONFIG_DIR, MISE_CACHE_DIR and all mounts.
+  --minimal   Persist all mise/bun dirs (compat alias).
+  --full      Persist all mise/bun dirs.
 
 Defaults:
   mode: --full
@@ -85,6 +85,7 @@ set_value() {
   local parent="${selector%.*}"
   local leaf="${selector##*.}"
   local current
+  local root='($root ?? {})'
 
   current="$(dasel -i toml "${selector}" < "$CONFIG_PATH" 2>/dev/null)" || true
   if [ "$current" = "'${value}'" ] || [ "$current" = "\"${value}\"" ] || [ "$current" = "$value" ]; then
@@ -93,7 +94,7 @@ set_value() {
   fi
 
   printf 'Setting: %s = %s\n' "$selector" "$value"
-  local query="\$root = {\$root..., \"${parent}\": {(\$root.${parent} ?? {})..., \"${leaf}\": \"${value}\"}}"
+  local query="\$root = {${root}..., \"${parent}\": {((${root}).${parent} ?? {})..., \"${leaf}\": \"${value}\"}}"
   dasel -i toml -o toml --root "$query" \
     < "$CONFIG_PATH" > "${CONFIG_PATH}.tmp" \
     && mv "${CONFIG_PATH}.tmp" "$CONFIG_PATH"
@@ -102,6 +103,7 @@ set_value() {
 append_if_missing() {
   local selector="$1"
   local value="$2"
+  local root='($root ?? {})'
 
   if array_contains "${selector}" "$value"; then
     printf 'Value already exists: %s\n' "$value"
@@ -111,7 +113,7 @@ append_if_missing() {
   printf 'Appending value: %s\n' "$value"
   local parent="${selector%.*}"
   local leaf="${selector##*.}"
-  local query="\$root = {\$root..., \"${parent}\": {(\$root.${parent} ?? {})..., \"${leaf}\": [(\$root.${selector} ?? [])..., \"${value}\"]}}"
+  local query="\$root = {${root}..., \"${parent}\": {((${root}).${parent} ?? {})..., \"${leaf}\": [((((${root}).${selector}) ?? []))..., \"${value}\"]}}"
   dasel -i toml -o toml --root "$query" \
     < "$CONFIG_PATH" > "${CONFIG_PATH}.tmp" \
     && mv "${CONFIG_PATH}.tmp" "$CONFIG_PATH"
@@ -119,22 +121,18 @@ append_if_missing() {
 
 ENV_VALUES=(
   'MISE_DATA_DIR=/opt/leash/mise/data'
+  'MISE_CONFIG_DIR=/opt/leash/mise/config'
+  'MISE_CACHE_DIR=/opt/leash/mise/cache'
+  'BUN_INSTALL=/opt/leash/bun'
+  'BUN_INSTALL_CACHE_DIR=/opt/leash/bun/cache'
 )
 VOLUME_VALUES=(
   '$HOME/.cache/leash/mise/data:/opt/leash/mise/data'
+  '$HOME/.cache/leash/mise/config:/opt/leash/mise/config'
+  '$HOME/.cache/leash/mise/cache:/opt/leash/mise/cache'
+  '$HOME/.cache/leash/bun:/opt/leash/bun'
   '$HOME/.config/gh:/root/.config/gh:ro'
 )
-
-if [ "$MODE" = "full" ]; then
-  ENV_VALUES+=(
-    'MISE_CONFIG_DIR=/opt/leash/mise/config'
-    'MISE_CACHE_DIR=/opt/leash/mise/cache'
-  )
-  VOLUME_VALUES+=(
-    '$HOME/.cache/leash/mise/config:/opt/leash/mise/config'
-    '$HOME/.cache/leash/mise/cache:/opt/leash/mise/cache'
-  )
-fi
 
 if [ -f "$HOME/.gitignore" ]; then
   VOLUME_VALUES+=(
@@ -142,8 +140,25 @@ if [ -f "$HOME/.gitignore" ]; then
   )
 fi
 
-GIT_AUTHOR_NAME_VALUE="$(git config user.name 2>/dev/null || true)"
-GIT_AUTHOR_EMAIL_VALUE="$(git config user.email 2>/dev/null || true)"
+if [ -f "$HOME/.gitconfig" ]; then
+  VOLUME_VALUES+=(
+    '$HOME/.gitconfig:/root/.gitconfig:ro'
+  )
+fi
+
+GIT_AUTHOR_NAME_VALUE=""
+GIT_AUTHOR_EMAIL_VALUE=""
+if command -v git >/dev/null 2>&1; then
+  GIT_AUTHOR_NAME_VALUE="$(git config --global --get user.name 2>/dev/null || true)"
+  GIT_AUTHOR_EMAIL_VALUE="$(git config --global --get user.email 2>/dev/null || true)"
+
+  if [ -z "$GIT_AUTHOR_NAME_VALUE" ]; then
+    GIT_AUTHOR_NAME_VALUE="$(git config --get user.name 2>/dev/null || true)"
+  fi
+  if [ -z "$GIT_AUTHOR_EMAIL_VALUE" ]; then
+    GIT_AUTHOR_EMAIL_VALUE="$(git config --get user.email 2>/dev/null || true)"
+  fi
+fi
 
 if [ -n "$GIT_AUTHOR_NAME_VALUE" ]; then
   ENV_VALUES+=(

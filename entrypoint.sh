@@ -2,6 +2,8 @@
 # Sourced by login shells via /etc/profile.d/.
 # Detects project tooling and installs runtimes via mise on first login.
 
+export PATH="/opt/leash/mise/data/shims:/opt/leash/bun/bin:/usr/local/bin:${PATH:-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin}"
+
 # Run-once guard: skip if already ran in this container.
 if [ -f /tmp/.leash-mise-installed ]; then
   return 0 2>/dev/null || exit 0

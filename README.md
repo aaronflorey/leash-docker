@@ -1,11 +1,13 @@
 # leash-docker
 
-This image extends `ghcr.io/strongdm/coder` with:
+This image is a slim Leash target image built from `debian:bookworm-slim` with:
 
 - `mise`
+- `bun`
 - `git`
 - a custom entrypoint that scans the mounted repository at startup
 - runtime/package manager installs based on detected lockfiles
+- on-demand AI CLI install via `mise` registry based on invoked command (`codex`, `claude`, `gemini`, `qwen`, `opencode`)
 
 ## What it detects
 
@@ -59,9 +61,16 @@ Minimal example:
 [global]
 env = [
   "MISE_DATA_DIR=/opt/leash/mise/data",
+  "MISE_CONFIG_DIR=/opt/leash/mise/config",
+  "MISE_CACHE_DIR=/opt/leash/mise/cache",
+  "BUN_INSTALL=/opt/leash/bun",
+  "BUN_INSTALL_CACHE_DIR=/opt/leash/bun/cache",
 ]
 volumes = [
   "$HOME/.cache/leash/mise/data:/opt/leash/mise/data",
+  "$HOME/.cache/leash/mise/config:/opt/leash/mise/config",
+  "$HOME/.cache/leash/mise/cache:/opt/leash/mise/cache",
+  "$HOME/.cache/leash/bun:/opt/leash/bun",
 ]
 ```
 
@@ -73,11 +82,14 @@ env = [
   "MISE_DATA_DIR=/opt/leash/mise/data",
   "MISE_CONFIG_DIR=/opt/leash/mise/config",
   "MISE_CACHE_DIR=/opt/leash/mise/cache",
+  "BUN_INSTALL=/opt/leash/bun",
+  "BUN_INSTALL_CACHE_DIR=/opt/leash/bun/cache",
 ]
 volumes = [
   "$HOME/.cache/leash/mise/data:/opt/leash/mise/data",
   "$HOME/.cache/leash/mise/config:/opt/leash/mise/config",
   "$HOME/.cache/leash/mise/cache:/opt/leash/mise/cache",
+  "$HOME/.cache/leash/bun:/opt/leash/bun",
 ]
 ```
 
@@ -86,8 +98,6 @@ This gives you:
 - persistent installed runtimes and shims in `/opt/leash/mise/data`
 - persistent `mise` config in `/opt/leash/mise/config`
 - persistent download/build cache in `/opt/leash/mise/cache`
-
-If you only want the important bit for startup speed, mounting `MISE_DATA_DIR` is the main one.
 
 ## Automatic config setup
 
@@ -138,7 +148,7 @@ The script:
 - creates the config file if it does not exist
 - adds the required `global.env` and `global.volumes` entries only when missing
 - leaves unrelated config values untouched
-- supports `--minimal` and `--full`
+- accepts `--minimal` and `--full` for compatibility (both now persist all mise/bun dirs)
 
 ## Notes
 
